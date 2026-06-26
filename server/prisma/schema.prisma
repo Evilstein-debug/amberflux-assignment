@@ -1,7 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// Learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client"
@@ -10,4 +7,51 @@ generator client {
 
 datasource db {
   provider = "sqlite"
+}
+
+enum Priority {
+  Low
+  Medium
+  High
+}
+
+enum QuoteStatus {
+  New
+  InReview
+  NeedsInfo
+  WaitingForCustomer
+  Completed
+}
+
+// RiskLevel mirrors Priority values but is semantically distinct — kept separate for clarity
+enum RiskLevel {
+  Low
+  Medium
+  High
+}
+
+model QuoteRequest {
+  id             String         @id @default(cuid())
+  customer       String
+  project        String
+  city           String
+  status         QuoteStatus    @default(New)
+  priority       Priority
+  estimatedValue Float
+  createdAt      DateTime       @default(now())
+
+  // One quote can have at most one analysis result
+  analysis       AnalysisResult?
+}
+
+model AnalysisResult {
+  id           String       @id @default(cuid())
+  quoteId      String       @unique
+  risk         RiskLevel
+  // SQLite has no native array type — stored as JSON string, deserialized in the repository
+  missingItems String
+  confidence   Int
+  analyzedAt   DateTime     @default(now())
+
+  quote        QuoteRequest @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 }
