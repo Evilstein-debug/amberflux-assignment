@@ -1,0 +1,369 @@
+{
+  "info": {
+    "name": "Quote Request Dashboard",
+    "description": "Full API collection for the Quote Request Workflow Dashboard assignment.\n\n**Servers**\n- Express (Node.js): `{{expressUrl}}` — default http://localhost:3001\n- FastAPI (Python): `{{fastApiUrl}}` — default http://localhost:8000\n\n**Quick start**\n1. Start FastAPI: `cd fastapi-server && .venv/bin/uvicorn main:app --port 8000`\n2. Start Express: `cd server && pnpm dev`\n3. Run the **Express API** folder top-to-bottom. The \"Create Quote\" request auto-saves the new quote ID into the `quoteId` variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "expressUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "fastApiUrl",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "quoteId",
+      "value": "",
+      "type": "string",
+      "description": "Auto-populated by the 'Create Quote' request test script."
+    }
+  ],
+  "item": [
+    {
+      "name": "Express API",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/health",
+              "host": ["{{expressUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Verify the Express server is running."
+          }
+        },
+        {
+          "name": "Get All Quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"]
+            },
+            "description": "Returns all quote requests ordered by createdAt desc."
+          }
+        },
+        {
+          "name": "Get All Quotes — Filter by Status",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes?status=New",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"],
+              "query": [
+                { "key": "status", "value": "New", "description": "New | InReview | NeedsInfo | WaitingForCustomer | Completed" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Quotes — Filter by Priority",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes?priority=High",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"],
+              "query": [
+                { "key": "priority", "value": "High", "description": "Low | Medium | High" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Quotes — Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes?search=Skyline",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"],
+              "query": [
+                { "key": "search", "value": "Skyline", "description": "Matches customer name or project name (case-insensitive)." }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Quotes — Combined Filters",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes?status=New&priority=High&search=Office",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"],
+              "query": [
+                { "key": "status", "value": "New" },
+                { "key": "priority", "value": "High" },
+                { "key": "search", "value": "Office" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) {",
+                  "  pm.collectionVariables.set('quoteId', json.id);",
+                  "  console.log('Saved quoteId:', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": \"Skyline Builders\",\n  \"project\": \"Office Lobby\",\n  \"city\": \"Dallas, TX\",\n  \"priority\": \"High\",\n  \"estimated_value\": 42000\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"]
+            },
+            "description": "Creates a new quote. Default status is `New`.\n\nThe test script automatically saves the returned `id` as the `quoteId` collection variable."
+          }
+        },
+        {
+          "name": "Create Quote — Validation Error (Missing Customer)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"project\": \"Office Lobby\",\n  \"city\": \"Dallas, TX\",\n  \"priority\": \"High\",\n  \"estimated_value\": 42000\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"]
+            },
+            "description": "Expected: 400 — customer is required."
+          }
+        },
+        {
+          "name": "Create Quote — Validation Error (Value ≤ 0)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": \"Test Co\",\n  \"project\": \"Test Project\",\n  \"city\": \"Austin, TX\",\n  \"priority\": \"Low\",\n  \"estimated_value\": 0\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"]
+            },
+            "description": "Expected: 400 — estimated_value must be greater than 0."
+          }
+        },
+        {
+          "name": "Create Quote — Validation Error (Invalid Priority)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": \"Test Co\",\n  \"project\": \"Test Project\",\n  \"city\": \"Austin, TX\",\n  \"priority\": \"Critical\",\n  \"estimated_value\": 5000\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes"]
+            },
+            "description": "Expected: 400 — priority must be Low | Medium | High."
+          }
+        },
+        {
+          "name": "Get Quote by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes/{{quoteId}}",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "{{quoteId}}"]
+            },
+            "description": "Returns the quote including its analysis result (if analyzed)."
+          }
+        },
+        {
+          "name": "Get Quote by ID — Not Found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{expressUrl}}/quotes/nonexistent-id",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "nonexistent-id"]
+            },
+            "description": "Expected: 404."
+          }
+        },
+        {
+          "name": "Update Quote Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"InReview\"\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes/{{quoteId}}/status",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "{{quoteId}}", "status"]
+            },
+            "description": "Allowed values: `New` | `InReview` | `NeedsInfo` | `WaitingForCustomer` | `Completed`"
+          }
+        },
+        {
+          "name": "Update Quote Status — Validation Error",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Approved\"\n}"
+            },
+            "url": {
+              "raw": "{{expressUrl}}/quotes/{{quoteId}}/status",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "{{quoteId}}", "status"]
+            },
+            "description": "Expected: 400 — invalid status value."
+          }
+        },
+        {
+          "name": "Run Analysis",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{expressUrl}}/quotes/{{quoteId}}/analyze",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "{{quoteId}}", "analyze"]
+            },
+            "description": "Calls the FastAPI analysis service, saves the result, and returns the full quote with analysis.\n\n**Requires FastAPI running on port 8000.**"
+          }
+        },
+        {
+          "name": "Run Analysis — Not Found",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{expressUrl}}/quotes/nonexistent-id/analyze",
+              "host": ["{{expressUrl}}"],
+              "path": ["quotes", "nonexistent-id", "analyze"]
+            },
+            "description": "Expected: 404."
+          }
+        }
+      ]
+    },
+    {
+      "name": "FastAPI Analysis Service",
+      "item": [
+        {
+          "name": "Analyze — Low Risk (value < $20,000)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"Q1001\",\n  \"project\": \"Storage Room Paint\",\n  \"estimated_value\": 8000\n}"
+            },
+            "url": {
+              "raw": "{{fastApiUrl}}/analyze",
+              "host": ["{{fastApiUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "estimated_value < 20,000 → Low risk."
+          }
+        },
+        {
+          "name": "Analyze — Medium Risk ($20,000–$50,000)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"Q1002\",\n  \"project\": \"Office Lobby Renovation\",\n  \"estimated_value\": 42000\n}"
+            },
+            "url": {
+              "raw": "{{fastApiUrl}}/analyze",
+              "host": ["{{fastApiUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "20,000 ≤ estimated_value ≤ 50,000 → Medium risk. 'renovation' keyword triggers As-built drawings."
+          }
+        },
+        {
+          "name": "Analyze — High Risk (value > $50,000)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"Q1003\",\n  \"project\": \"Medical Office Fit-Out\",\n  \"estimated_value\": 95000\n}"
+            },
+            "url": {
+              "raw": "{{fastApiUrl}}/analyze",
+              "host": ["{{fastApiUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "estimated_value > 50,000 → High risk. 'medical' keyword triggers ADA compliance report."
+          }
+        },
+        {
+          "name": "Analyze — High Risk Large Project",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"Q1004\",\n  \"project\": \"Waterfront Retail Buildout\",\n  \"estimated_value\": 128500\n}"
+            },
+            "url": {
+              "raw": "{{fastApiUrl}}/analyze",
+              "host": ["{{fastApiUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "estimated_value > 100,000 → Structural drawings + Load requirements added."
+          }
+        },
+        {
+          "name": "Analyze — Data Center (HVAC keyword)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quote_id\": \"Q1005\",\n  \"project\": \"Data Center Power Upgrade\",\n  \"estimated_value\": 175000\n}"
+            },
+            "url": {
+              "raw": "{{fastApiUrl}}/analyze",
+              "host": ["{{fastApiUrl}}"],
+              "path": ["analyze"]
+            },
+            "description": "'power' keyword triggers Electrical load schedule. Large value triggers Structural drawings + Load requirements."
+          }
+        }
+      ]
+    }
+  ]
+}
