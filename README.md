@@ -6,29 +6,38 @@ A full-stack application for managing and analyzing customer quotes. This projec
 
 ```mermaid
 graph TD
-    subgraph Client [React Frontend - Port 5173]
-        UI[UI Components]
-        State[Redux / TanStack Query]
-        UI <--> State
+
+    subgraph Frontend["React Frontend (5173)"]
+        UI[Dashboard UI]
+        Store[Redux Toolkit]
+        Query[TanStack Query]
+        UI --> Store
+        UI --> Query
     end
 
-    subgraph Backend [Express Server - Port 3001]
-        Routes[Express Routes]
-        Service[Service Layer]
-        Repo[Prisma Repository]
-        Routes <--> Service
-        Service <--> Repo
+    subgraph Backend["Express API (3001)"]
+        Routes[Routes]
+        Controllers[Controllers]
+        Services[Services]
+        Repository[Repository Layer]
+        Prisma[Prisma ORM]
+
+        Routes --> Controllers
+        Controllers --> Services
+        Services --> Repository
+        Repository --> Prisma
     end
 
-    subgraph Analysis [FastAPI Microservice - Port 8000]
-        Logic[Rule-based AI Logic]
+    subgraph Analysis["FastAPI Service (8000)"]
+        Engine[Quote Analysis Engine]
     end
-    
-    DB[(SQLite Database)]
 
-    State <-->|REST API| Routes
-    Service <-->|HTTP POST| Logic
-    Repo <-->|Prisma ORM| DB
+    DB[(SQLite)]
+
+    Query -->|REST API| Routes
+    Prisma --> DB
+    Services -->|POST /analyze| Engine
+    Engine -->|Analysis Result| Services
 ```
 
 - **Frontend (`client/`)**: React + Vite, Tailwind CSS v4, Redux Toolkit for UI state, and TanStack Query for server state and caching.
